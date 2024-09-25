@@ -24,6 +24,8 @@
 <script>
 import ContentBase from '../components/ContentBase';
 import { ref } from 'vue';
+import { useStore } from 'vuex';
+import router from '@/router/index';
 
 export default {
     name: 'LoginView',
@@ -32,12 +34,23 @@ export default {
     },
 
     setup() {
+        const store = useStore()
         let username = ref('')
         let password = ref('')
         let error_message = ref('')
 
         const login = () => {
-            console.log(username.value, password.value);
+            error_message.value = ''
+            store.dispatch('login', {   // 调用 action 中的函数用 dispatch
+                username: username.value,
+                password: password.value,
+                success() {
+                    router.push({ name: 'userlist', params: {} })
+                },
+                error() {
+                    error_message.value = '用户名或密码错误'
+                }
+            })
         }
 
         return {
