@@ -12,6 +12,8 @@
 
 <script>
 import { ref } from 'vue';
+import $ from 'jquery';
+import { useStore } from 'vuex';
 
 export default {
     name: 'UserProfileWriteView',
@@ -20,10 +22,28 @@ export default {
 
 
     setup(props, context) {
+        const store = useStore();
         let content = ref('');
         const submit_post = () => {
-            context.emit('submit_post', content.value);
-            content.value = '';
+            $.ajax({
+                url: "https://app165.acapp.acwing.com.cn/myspace/post/",
+                type: 'POST',
+                data: {
+                    content: content.value
+                },
+                headers: {
+                    'Authorization': 'Bearer ' + store.state.user.access,
+                },
+                success(resp) {
+                    if (resp.result === 'success') {
+                        context.emit('submit_post', content.value);
+                        content.value = '';
+                        console.log('发表成功');
+                    } else {
+                        console.log('发表失败');
+                    }
+                }
+            });
         }
 
         return {

@@ -3,10 +3,10 @@
         <div class="row">
             <div class="col-3">
                 <UserProfileInfoView @follow="follow" @unfollow="unfollow" :user="user" />
-                <UserProfileWriteView @submit_post="submit_post" />
+                <UserProfileWriteView v-if="is_me" @submit_post="submit_post" />
             </div>
             <div class="col-9">
-                <UserProfilePostsView :posts="posts" />
+                <UserProfilePostsView :user="user" :posts="posts" @delete_a_post="delete_a_post" />
             </div>
         </div>
     </ContentBase>
@@ -19,6 +19,9 @@ import UserProfileInfoView from '../components/UserProfileInfoView';
 import UserProfilePostsView from '../components/UserProfilePostsView';
 import UserProfileWriteView from '../components/UserProfileWriteView';
 import { useRoute } from 'vue-router';
+import $ from 'jquery';
+import { useStore } from 'vuex';
+import { computed } from 'vue';
 
 export default {
     name: 'UserProfileView',
@@ -31,38 +34,54 @@ export default {
 
     // setup 的作用是初始化数据，类似构造器，不能使用 this
     setup() {
+        const store = useStore();
         const route = useRoute();
-        const userId = route.params.userId;
-        console.log(userId);
+        const userId = parseInt(route.params.userId);
 
         const user = reactive({
-            id: 1,
-            username: 'Maohua Lv',
-            lastName: 'Lv',
-            firstName: 'Maohua',
-            followerCount: 0,
-            is_followed: false,
+
         });
 
         const posts = reactive({
-            count: 3,
-            posts: [
-                {
-                    id: 1,
-                    userid: 1,
-                    content: 'Hello World'
-                },
-                {
-                    id: 2,
-                    userid: 1,
-                    content: 'Vue 3 is awesome'
-                },
-                {
-                    id: 3,
-                    userid: 1,
-                    content: 'Vue Router 4 is awesome'
-                },
-            ]
+
+        });
+
+        $.ajax({
+            url: "https://app165.acapp.acwing.com.cn/myspace/getinfo/",
+            type: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + store.state.user.access,
+            },
+            data: {
+                user_id: userId
+            },
+
+            success(resp) {
+                user.id = resp.id;
+                user.username = resp.username;
+                user.photo = resp.photo;
+                user.followerCount = resp.followerCount;
+                user.is_followed = resp.is_followed;
+            }
+        });
+
+        $.ajax({
+            url: "https://app165.acapp.acwing.com.cn/myspace/post/",
+            type: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + store.state.user.access,
+            },
+            data: {
+                user_id: userId
+            },
+            success(resp) {
+                posts.count = resp.length;
+                posts.posts = resp;
+            }
+        });
+
+        const is_me = computed(() => {
+            return store.state.user.id === userId;
         });
 
         const follow = () => {
@@ -88,12 +107,19 @@ export default {
             });
         }
 
+        const delete_a_post = (post_id) => {
+            posts.posts = posts.posts.filter(post => post.id !== post_id);
+            posts.count = posts.posts.length;
+        }
+
         return {
             user,
             follow,
             unfollow,
             posts,
-            submit_post
+            submit_post,
+            is_me,
+            delete_a_post
         }
     }
 }

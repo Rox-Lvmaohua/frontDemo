@@ -1,9 +1,9 @@
 <template>
     <ContentBase>
-        <div class="card" v-for="user in users" :key="user.id">
+        <div class="card" v-for="user in users" :key="user.id" @click="open_user_profile(user.id)">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-1">
+                    <div class="col-1 img-field">
                         <img class="img-fluid" :src="user.photo" alt="">
                     </div>
                     <div class="col-11">
@@ -20,6 +20,8 @@
 import ContentBase from '../components/ContentBase';
 import $ from 'jquery';
 import { ref } from 'vue';
+import router from '@/router/index';
+import { useStore } from 'vuex';
 
 export default {
     name: 'UserListView',
@@ -27,6 +29,7 @@ export default {
         ContentBase,
     },
     setup() {
+        const store = useStore();
         let users = ref([])
 
         $.ajax({
@@ -35,10 +38,25 @@ export default {
             success(resp) {
                 users.value = resp
             }
+        });
+
+        // 只有登录了才能查看用户的个人主页，否则跳转到登录页面
+        const open_user_profile = (user_id) => {
+            if (store.state.user.is_login) {
+                router.push({
+                    name: 'userprofile',
+                    params: {
+                        userId: user_id
+                    }
+                })
+            } else {
+                router.push({ name: 'login' })
+            }
         }
-        )
+
         return {
-            users
+            users,
+            open_user_profile
         }
     }
 }
@@ -69,5 +87,12 @@ img {
 .card:hover {
     box-shadow: 2px 2px 10px gray;
     transition: 500ms;
+}
+
+.img-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 </style>

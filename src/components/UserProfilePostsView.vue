@@ -3,7 +3,11 @@
         <div class="card-body">
             <div v-for="post in posts.posts" :key="post.id">
                 <div class="card single-post">
-                    <div class="card-body">{{ post.content }}</div>
+                    <div class="card-body">
+                        {{ post.content }}
+                        <button @click="delete_a_post(post.id)" v-if="is_me" type="button"
+                            class="btn btn-danger btn-sm">删除</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -11,6 +15,10 @@
 </template>
 
 <script>
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+import $ from 'jquery';
+
 export default {
     name: 'UserProfilePostView',
     components: {
@@ -20,18 +28,55 @@ export default {
         posts: {
             type: Object,
             required: true
+        },
+        user: {
+            type: Object,
+            required: true
         }
     },
 
-    // setup(props, context) {
-    //     return {
-    //     }
-    // }
+    setup(props, context) {
+        console.log('posts', props.posts);
+        const store = useStore();
+        let is_me = computed(() => {
+            return store.state.user.id === props.user.id;
+        });
+
+        const delete_a_post = (post_id) => {
+            $.ajax({
+                url: "https://app165.acapp.acwing.com.cn/myspace/post/",
+                type: 'DELETE',
+                data: {
+                    post_id,
+                },
+                headers: {
+                    'Authorization': 'Bearer ' + store.state.user.access,
+                },
+                success(resp) {
+                    if (resp.result === 'success') {
+                        context.emit('delete_a_post', post_id);
+                        console.log('删除成功');
+                    } else {
+                        console.log('删除失败');
+                    }
+                }
+            });
+
+        }
+        return {
+            is_me,
+            delete_a_post
+        }
+    }
 }
 </script>
 
 <style scoped>
 .single-post {
     margin-bottom: 10px;
+}
+
+button {
+    float: right;
 }
 </style>
